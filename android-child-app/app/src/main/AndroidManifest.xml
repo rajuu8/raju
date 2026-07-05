@@ -1,37 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
-
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
-
     <uses-permission android:name="android.permission.BATTERY_STATS" tools:ignore="ProtectedPermissions" />
-
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
     <application
+        android:name=".ChildApp"
         android:allowBackup="true"
         android:icon="@drawable/ic_shield"
         android:label="Family Safety"
         android:theme="@style/Theme.ParentalControlChild">
-
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">
@@ -40,19 +30,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity android:name=".ui.SosActivity" android:exported="false" />
-
         <service
             android:name=".services.MonitoringService"
             android:foregroundServiceType="location"
             android:exported="false" />
-
         <service
             android:name=".services.ScreenCaptureService"
             android:foregroundServiceType="mediaProjection"
             android:exported="false" />
-
         <receiver
             android:name=".receivers.BootReceiver"
             android:exported="true">
@@ -60,7 +46,6 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
         <receiver
             android:name=".receivers.AppInstallReceiver"
             android:exported="true">
@@ -69,6 +54,5 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
-
     </application>
 </manifest>
