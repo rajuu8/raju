@@ -106,7 +106,7 @@ class MonitoringService : Service() {
         val json = JSONObject().apply {
             put("latitude", location.latitude)
             put("longitude", location.longitude)
-            put("accuracy", location.accuracy)
+            put("accuracy", location.accuracy.toDouble())
         }
         ApiClient.post("/api/location/$deviceId", json) { _, _ -> }
     }
