@@ -37,6 +37,22 @@ class MainActivity : AppCompatActivity() {
 
         AppUpdateChecker.checkForUpdate(this)
 
+        val lastCrash = com.pcontrol.child.ChildApp.getLastCrash(this)
+        if (lastCrash != null) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Last crash details")
+                .setMessage(lastCrash)
+                .setPositiveButton("Copy") { _, _ ->
+                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("crash", lastCrash))
+                    Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Dismiss") { _, _ ->
+                    com.pcontrol.child.ChildApp.clearLastCrash(this)
+                }
+                .show()
+        }
+
         pairingCodeInput = findViewById(R.id.pairingCodeInput)
         val pairButton = findViewById<Button>(R.id.pairButton)
         val statusText = findViewById<TextView>(R.id.statusText)
