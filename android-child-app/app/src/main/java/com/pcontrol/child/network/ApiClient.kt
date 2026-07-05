@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
 
     // TODO: change this to your deployed backend, e.g. "https://your-app.onrender.com"
-    const val BASE_URL = "http://10.0.2.2:5000" // default = Android emulator localhost
+    const val BASE_URL = "https://raju-4xh6.onrender.com" // default = Android emulator localhost
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
