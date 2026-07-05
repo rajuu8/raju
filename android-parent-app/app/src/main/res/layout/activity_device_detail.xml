@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/deviceTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <!-- Location Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📍 Location"
+            android:textSize="18sp"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/locationText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:layout_marginTop="4dp" />
+
+        <Button
+            android:id="@+id/viewLocationButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Refresh Location" />
+
+        <!-- Screen Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🖥️ Screen View"
+            android:textSize="18sp"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Only works while the child device has actively shared its screen (shows a notification on their side)."
+            android:textSize="12sp"
+            android:textColor="#757575" />
+
+        <ImageView
+            android:id="@+id/screenImageView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:scaleType="fitCenter"
+            android:background="#EEEEEE"
+            android:layout_marginTop="8dp" />
+
+        <Button
+            android:id="@+id/requestScreenButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Request Screenshot" />
+
+        <!-- Alerts Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔔 Alerts"
+            android:textSize="18sp"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/alertsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tap below to load"
+            android:layout_marginTop="4dp" />
+
+        <Button
+            android:id="@+id/viewAlertsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Load Alerts" />
+
+    </LinearLayout>
+</ScrollView>

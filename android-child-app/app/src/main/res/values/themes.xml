@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.ParentalControlChild" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+</resources>
