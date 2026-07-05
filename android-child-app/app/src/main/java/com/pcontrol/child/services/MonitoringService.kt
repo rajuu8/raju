@@ -4,11 +4,13 @@ import android.app.*
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.google.android.gms.location.*
 import com.pcontrol.child.R
 import com.pcontrol.child.network.ApiClient
@@ -18,16 +20,6 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Foreground service that:
- *  1. Sends periodic location updates
- *  2. Sends heartbeat + battery level
- *  3. Syncs today's app usage stats
- *
- * This ALWAYS shows a persistent notification while running (Android requirement
- * for foreground services) - this is intentional so the child always knows
- * monitoring is active. Do not remove/hide this notification.
- */
 class MonitoringService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -36,20 +28,36 @@ class MonitoringService : Service() {
     companion object {
         const val CHANNEL_ID = "monitoring_channel"
         const val NOTIFICATION_ID = 1001
-        const val HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000L // every 5 minutes
+        const val HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000L
     }
 
     override fun onCreate() {
         super.onCreate()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification())
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceCompat.startForeground(
+                    this,
+                    NOTIFICATION_ID,
+                    buildNotification(),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, buildNotification())
+            }
+        } catch (e: Exception) {
+            stopSelf()
+            return
+        }
+
         startLocationUpdates()
         startPeriodicSync()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY // restart automatically if killed
+        return START_STICKY
     }
 
     private fun buildNotification(): Notification {
@@ -79,7 +87,7 @@ class MonitoringService : Service() {
         val deviceId = DeviceConfig.getDeviceId(this) ?: return
 
         val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY, 10 * 60 * 1000L // every 10 min
+            Priority.PRIORITY_BALANCED_POWER_ACCURACY, 10 * 60 * 1000L
         ).build()
 
         val callback = object : LocationCallback() {
@@ -91,7 +99,6 @@ class MonitoringService : Service() {
         try {
             fusedLocationClient.requestLocationUpdates(locationRequest, callback, mainLooper)
         } catch (e: SecurityException) {
-            // Location permission not granted - handled in MainActivity permission flow
         }
     }
 
