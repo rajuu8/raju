@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.AppOpsManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -13,6 +12,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.pcontrol.child.R
 import com.pcontrol.child.network.ApiClient
+import com.pcontrol.child.network.AppUpdateChecker
 import com.pcontrol.child.network.DeviceConfig
 import com.pcontrol.child.services.MonitoringService
 import org.json.JSONObject
@@ -21,32 +21,30 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 
-/**
- * First screen shown to the child/device holder.
- * - Explains clearly that this is a parental monitoring app (transparency).
- * - Takes the pairing code from the parent app.
- * - Requests all permissions one by one, with system dialogs (child sees each request).
- * - Starts MonitoringService once paired + permissions granted.
- */
 class MainActivity : AppCompatActivity() {
 
     private val REQUEST_LOCATION = 100
     private val REQUEST_BACKGROUND_LOCATION = 101
     private val REQUEST_CALL_LOG = 102
+    private val REQUEST_NOTIFICATIONS = 103
 
     private lateinit var pairingCodeInput: EditText
+    private var monitoringStarted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        AppUpdateChecker.checkForUpdate(this)
 
         pairingCodeInput = findViewById(R.id.pairingCodeInput)
         val pairButton = findViewById<Button>(R.id.pairButton)
         val statusText = findViewById<TextView>(R.id.statusText)
 
         if (DeviceConfig.isPaired(this)) {
-            statusText.text = "This device is already linked to a parent account."
-            pairButton.text = "Re-check Permissions"
+            pairingCodeInput.visibility = android.view.View.GONE
+            statusText.text = "This device is linked. Tap below to check/grant permissions."
+            pairButton.text = "Check Permissions"
         }
 
         pairButton.setOnClickListener {
@@ -68,10 +66,14 @@ class MainActivity : AppCompatActivity() {
         ApiClient.post("/api/device/pair", json) { success, response ->
             runOnUiThread {
                 if (success && response != null) {
-                    val obj = JSONObject(response)
-                    DeviceConfig.saveDeviceId(this, obj.getString("deviceId"))
-                    Toast.makeText(this, "Paired successfully!", Toast.LENGTH_SHORT).show()
-                    requestAllPermissions()
+                    try {
+                        val obj = JSONObject(response)
+                        DeviceConfig.saveDeviceId(this, obj.getString("deviceId"))
+                        Toast.makeText(this, "Paired successfully!", Toast.LENGTH_SHORT).show()
+                        requestAllPermissions()
+                    } catch (e: Exception) {
+                        Toast.makeText(this, "Unexpected response, try again", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
                     Toast.makeText(this, "Invalid code, try again", Toast.LENGTH_SHORT).show()
                 }
@@ -80,7 +82,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestAllPermissions() {
-        // Step 1: Foreground location
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS
+            )
+            return
+        }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -90,7 +101,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Step 2: Background location (Android 10+, separate prompt required)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             != PackageManager.PERMISSION_GRANTED
@@ -101,7 +111,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Step 3: Call log (optional feature)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -111,10 +120,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Step 4: Usage access (special setting screen, not a normal permission dialog)
         if (!hasUsageStatsPermission()) {
             Toast.makeText(this, "Please enable Usage Access on the next screen", Toast.LENGTH_LONG).show()
-            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            try {
+                startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Could not open settings, please enable manually", Toast.LENGTH_LONG).show()
+            }
             return
         }
 
@@ -132,22 +144,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startMonitoring() {
-        val intent = Intent(this, MonitoringService::class.java)
-        ContextCompat.startForegroundService(this, intent)
-        Toast.makeText(this, "Monitoring is now active", Toast.LENGTH_SHORT).show()
+        if (monitoringStarted) return
+        try {
+            val intent = Intent(this, MonitoringService::class.java)
+            ContextCompat.startForegroundService(this, intent)
+            monitoringStarted = true
+            Toast.makeText(this, "Monitoring is now active", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not start monitoring: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Whatever the result, continue the permission chain (skips already-denied ones gracefully)
         requestAllPermissions()
     }
 
     override fun onResume() {
         super.onResume()
-        if (DeviceConfig.isPaired(this) && hasUsageStatsPermission()) {
+        if (!monitoringStarted && DeviceConfig.isPaired(this) && hasUsageStatsPermission()) {
             startMonitoring()
         }
     }
