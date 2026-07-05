@@ -34,4 +34,20 @@ object ApiClient {
             }
         })
     }
+
+    fun get2(path: String, callback: (Boolean, String?) -> Unit) {
+        val request = Request.Builder().url("$BASE_URL$path").get().build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                callback(false, e.message)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val bodyStr = response.body?.string()
+                callback(response.isSuccessful, bodyStr)
+                response.close()
+            }
+        })
+    }
 }
